@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wave Play · Consola de Configuración</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0e1a;
+    --grid-line:rgba(79,214,255,0.055);
+    --panel:#0f1526;
+    --panel2:#131a30;
+    --panel3:#171f3a;
+    --border:#243156;
+    --border-bright:#3a4a80;
+    --amber:#ffb020;
+    --amber-2:#ff8a3d;
+    --amber-dim:rgba(255,176,32,0.12);
+    --cyan:#4fd6ff;
+    --cyan-dim:rgba(79,214,255,0.10);
+    --text:#eef2fa;
+    --muted:#8592b0;
+    --faint:#4a5674;
+    --danger:#ff5470;
+    --danger-bg:rgba(255,84,112,0.10);
+    --ok:#3ddc84;
+    --ok-bg:rgba(61,220,132,0.10);
+    --violet:#a78bfa;
+    --violet-bg:rgba(167,139,250,0.10);
+    --radius:4px;
+    --radius-sm:3px;
+    --font-display:'IBM Plex Mono', ui-monospace, monospace;
+    --font-body:'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono:'IBM Plex Mono', ui-monospace, monospace;
+  }
+  *{box-sizing:border-box;}
+  ::selection{background:var(--amber); color:#0a0e1a;}
+  body{
+    margin:0; min-height:100vh;
+    background:
+      repeating-linear-gradient(0deg, var(--grid-line) 0px, var(--grid-line) 1px, transparent 1px, transparent 32px),
+      repeating-linear-gradient(90deg, var(--grid-line) 0px, var(--grid-line) 1px, transparent 1px, transparent 32px),
+      radial-gradient(1100px 560px at 15% -10%, rgba(255,176,32,0.06), transparent 55%),
+      radial-gradient(900px 500px at 100% 10%, rgba(79,214,255,0.05), transparent 55%),
+      var(--bg);
+    color:var(--text); font-family:var(--font-body);
+    padding:36px 20px 90px; line-height:1.55; -webkit-font-smoothing:antialiased;
+  }
+  .app-shell{max-width:1040px; margin:0 auto;}
+  /* ---------- Header / signature: LED status cluster ---------- */
+  .app-header{display:flex; align-items:center; gap:16px; margin-bottom:6px;}
+  .led-cluster{display:flex; gap:5px; flex-shrink:0;}
+  .led{width:9px; height:9px; border-radius:2px; background:var(--border-bright);}
+  .led.on{background:var(--cyan); box-shadow:0 0 8px var(--cyan);}
+  .led.blink{background:var(--amber); box-shadow:0 0 9px var(--amber); animation:ledBlink 1.4s ease-in-out infinite;}
+  @keyframes ledBlink{0%,100%{opacity:1;} 50%{opacity:.25;}}
+  @media (prefers-reduced-motion: reduce){ .led.blink{animation:none;} }
+  h1{font-family:var(--font-display); font-size:19px; font-weight:600; margin:0; letter-spacing:0.01em; text-transform:uppercase;}
+  h1 .accent{color:var(--amber);}
+  .sub{color:var(--muted); font-size:12.5px; margin:6px 0 28px 40px; font-family:var(--font-mono);}
+  h2{font-family:var(--font-display); font-size:13.5px; font-weight:600; margin:0 0 16px; text-transform:uppercase; letter-spacing:.06em;
+     color:var(--cyan); display:flex; align-items:center; gap:10px;}
+  h2 .step-no{color:var(--amber); font-weight:700;}
+  /* ---------- Breadcrumb stepper ---------- */
+  .steps{display:flex; align-items:center; gap:0; margin-bottom:26px; font-family:var(--font-mono); font-size:11.5px;
+    text-transform:uppercase; letter-spacing:.05em; flex-wrap:wrap;}
+  .step-item{color:var(--faint); padding:6px 4px; display:flex; align-items:center; gap:8px;}
+  .step-item .num{border:1px solid var(--border); border-radius:3px; padding:1px 6px; color:var(--faint);}
+  .step-item.active{color:var(--amber);}
+  .step-item.active .num{border-color:var(--amber); color:var(--amber); background:var(--amber-dim);}
+  .step-item.done{color:var(--cyan);}
+  .step-item.done .num{border-color:var(--cyan); color:var(--cyan);}
+  .step-sep{color:var(--border-bright); margin:0 6px; font-family:var(--font-mono);}
+  /* ---------- Cards with corner-bracket frame ---------- */
+  .card{position:relative; background:var(--panel2); border:1px solid var(--border); border-radius:var(--radius);
+    padding:26px 26px 24px; margin-bottom:20px;}
+  .card::before, .card::after{content:''; position:absolute; width:14px; height:14px; border:1.5px solid var(--cyan); opacity:.55;}
+  .card::before{top:-1px; left:-1px; border-right:none; border-bottom:none;}
+  .card::after{bottom:-1px; right:-1px; border-left:none; border-top:none;}
+  textarea{width:100%; background:var(--panel3); color:var(--text); border:1px solid var(--border); border-radius:var(--radius-sm);
+    padding:14px; font-family:var(--font-mono); font-size:12.5px; resize:vertical; transition:border-color .2s;}
+  textarea:focus{outline:none; border-color:var(--amber); box-shadow:0 0 0 3px var(--amber-dim);}
+  textarea::placeholder{color:var(--faint);}
+  button{cursor:pointer; border:none; border-radius:var(--radius-sm); padding:10px 18px; font-size:12.5px; font-weight:600;
+    font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.03em; transition:.15s ease;}
+  .btn-primary{background:var(--amber); color:#1a1000; box-shadow:0 4px 16px -4px rgba(255,176,32,0.5);}
+  .btn-primary:hover{background:var(--amber-2); box-shadow:0 6px 20px -4px rgba(255,138,61,0.6);}
+  .btn-primary:disabled{opacity:.35; cursor:not-allowed; box-shadow:none;}
+  .btn-ghost{background:transparent; color:var(--muted); border:1px solid var(--border);}
+  .btn-ghost:hover{color:var(--cyan); border-color:var(--cyan);}
+  .btn-mini{padding:6px 12px; font-size:10.5px; background:var(--panel3); color:var(--cyan); border:1px solid var(--border); border-radius:var(--radius-sm);}
+  .btn-mini:hover{border-color:var(--cyan); color:#fff; background:var(--cyan-dim);}
+  .btn-danger{color:var(--danger); border-color:rgba(255,84,112,0.35); background:var(--danger-bg);}
+  .btn-danger:hover{background:rgba(255,84,112,0.22); border-color:var(--danger); color:#fff;}
+  .row{display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; align-items:center;}
+  .hint{font-size:11px; color:var(--faint); margin-top:10px; font-family:var(--font-mono); line-height:1.6;}
+  .hint.warn{color:var(--amber-2);}
+  .badge{background:var(--panel3); color:var(--cyan); font-size:10px; padding:3px 8px; border-radius:3px; border:1px solid var(--border);
+    font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.04em;}
+  .badge-ok{color:var(--ok); border-color:rgba(61,220,132,0.35); background:var(--ok-bg);}
+  .toast{position:fixed; bottom:24px; right:24px; background:var(--panel3); border:1px solid var(--amber); color:var(--text);
+    padding:12px 18px; border-radius:var(--radius-sm); font-size:12.5px; font-family:var(--font-mono); opacity:0; transform:translateY(10px);
+    transition:.25s; pointer-events:none; z-index:9999; box-shadow:0 10px 30px -8px rgba(0,0,0,0.7);}
+  .toast.show{opacity:1; transform:translateY(0);}
+  /* ---------- Provider rows ---------- */
+  .provider-row{border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px; margin-bottom:10px; background:rgba(255,255,255,0.012);
+    display:flex; flex-direction:column; gap:10px; position:relative;}
+  .provider-row.row-new{border-color:rgba(61,220,132,0.4); background:var(--ok-bg);}
+  .provider-row.row-edited{border-color:rgba(255,176,32,0.4); background:var(--amber-dim);}
+  .provider-row-top{display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap;}
+  .provider-row-top .field{flex:1; min-width:160px; display:flex; flex-direction:column; gap:4px;}
+  .provider-row-top label{font-size:9.5px; color:var(--faint); text-transform:uppercase; letter-spacing:.06em; font-family:var(--font-mono);}
+  .provider-row input[type=text], .provider-row input[type=url]{width:100%; background:var(--panel3); border:1px solid var(--border); color:var(--text);
+    border-radius:var(--radius-sm); padding:8px 10px; font-size:12.5px; font-family:var(--font-mono);}
+  .provider-row input:focus{outline:none; border-color:var(--cyan); box-shadow:0 0 0 3px var(--cyan-dim);}
+  /* Segmented type selector — control-panel switch look */
+  .type-pills{display:flex; gap:4px; flex-wrap:wrap;}
+  .type-pill{background:var(--panel); border:1px solid var(--border); color:var(--faint); padding:6px 10px; font-size:10.5px;
+    border-radius:3px; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.03em; cursor:pointer;}
+  .type-pill:hover{border-color:var(--border-bright); color:var(--muted);}
+  .type-pill.active{background:var(--cyan-dim); border-color:var(--cyan); color:var(--cyan);}
+  .type-pill.active.is-web{background:var(--amber-dim); border-color:var(--amber); color:var(--amber);}
+  .row-x{background:transparent; border:1px solid var(--border); color:var(--danger); width:26px; height:26px; border-radius:var(--radius-sm);
+    padding:0; font-size:14px; line-height:1; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .row-x:hover{background:var(--danger-bg); border-color:var(--danger);}
+  /* ---------- Pricing rules ---------- */
+  .rule-card{display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap; padding:12px 14px; border:1px solid var(--border);
+    border-radius:var(--radius-sm); margin-bottom:8px; background:rgba(255,255,255,0.012);}
+  .rule-card .rule-field, .add-rule-form .rule-field{display:flex; flex-direction:column; gap:4px;}
+  .rule-card label, .add-rule-form label{font-size:9.5px; color:var(--faint); text-transform:uppercase; letter-spacing:.06em; font-family:var(--font-mono);}
+  .add-rule-form label{color:var(--cyan);}
+  .rule-card select, .rule-card input, .add-rule-form select, .add-rule-form input{background:var(--panel3); border:1px solid var(--border); color:var(--text);
+    border-radius:var(--radius-sm); padding:8px 10px; font-size:12.5px; font-family:var(--font-mono);}
+  .rule-card input[type=number], .add-rule-form input[type=number]{width:88px;}
+  .rule-card select{min-width:150px; cursor:pointer;}
+  .add-rule-form select{min-width:150px; cursor:pointer;}
+  .rule-price-wrap{display:flex; align-items:center; gap:6px;}
+  .rule-remove{margin-left:auto;}
+  .add-rule-form{display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap; padding:14px; border:1px dashed var(--border);
+    border-radius:var(--radius-sm); background:rgba(255,255,255,0.012);}
+  .empty{color:var(--faint); font-size:12.5px; padding:22px; text-align:center; font-family:var(--font-mono); border:1px dashed var(--border); border-radius:var(--radius-sm);}
+  .summary-list{list-style:none; margin:0; padding:0; font-size:12px; font-family:var(--font-mono);}
+  .summary-list li{padding:7px 0; border-bottom:1px solid rgba(255,255,255,0.04); display:flex; align-items:center; gap:8px;}
+  .summary-list li:last-child{border-bottom:none;}
+  .tag{font-size:9.5px; padding:2px 7px; border-radius:3px; font-family:var(--font-mono); flex-shrink:0; text-transform:uppercase;}
+  .tag-add{background:var(--ok-bg); color:var(--ok);}
+  .tag-edit{background:var(--amber-dim); color:var(--amber);}
+  .tag-del{background:var(--danger-bg); color:var(--danger);}
+  .tag-rule{background:var(--violet-bg); color:var(--violet);}
+  #finalCodeWrap textarea{min-height:340px; font-size:11.5px;}
+  ::-webkit-scrollbar{height:8px; width:8px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--border); border-radius:8px;}
+  ::-webkit-scrollbar-thumb:hover{background:var(--amber);}
+  @media (max-width:640px){ .sub{margin-left:0;} .rule-card{flex-direction:column; align-items:stretch;} .rule-remove{margin-left:0;} }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <div class="app-header">
+    <div class="led-cluster"><div class="led on"></div><div class="led on"></div><div class="led blink"></div><div class="led"></div></div>
+    <h1><span class="accent">Wave Play</span> · Consola de Configuración</h1>
+  </div>
+  <div class="sub">gestión de proveedores, métodos de pago y reglas de auto-precio</div>
+
+  <div class="steps">
+    <div class="step-item" id="pill-1"><span class="num">01</span> Código fuente</div>
+    <span class="step-sep">/</span>
+    <div class="step-item" id="pill-2"><span class="num">02</span> Proveedores</div>
+    <span class="step-sep">/</span>
+    <div class="step-item" id="pill-3"><span class="num">03</span> Reglas de precio</div>
+    <span class="step-sep">/</span>
+    <div class="step-item" id="pill-4"><span class="num">04</span> Compilar</div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="card" id="step1">
+    <h2><span class="step-no">01·</span> Cargar código fuente</h2>
+    <div class="hint" style="margin-top:0; margin-bottom:10px;">Pega aquí el código completo de tu organizador (el archivo .html). Esta consola no guarda ninguna versión por defecto — siempre parte vacía.</div>
+    <textarea id="codeInput" rows="10" spellcheck="false" placeholder="Pega aquí el código completo de tu organizador Wave Play..."></textarea>
+    <div class="row">
+      <button class="btn-primary" onclick="loadCode()">Leer código →</button>
+      <span id="loadStatus" class="hint" style="margin-top:0;"></span>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="card" id="step2" style="display:none;">
+    <h2><span class="step-no">02·</span> Proveedores y métodos de pago</h2>
+    <div class="hint" style="margin-top:0; margin-bottom:14px;">
+      Elige el tipo de método de pago para cada proveedor. Esto se guarda en <code>PROVIDER_PAYMENT_TYPES</code> de tu código y controla la etiqueta de color que ves en el desglose de pagos. Si eliges <b>Web</b>, ese proveedor abrirá el enlace en una pestaña nueva al presionar "Método" en el organizador; cualquier otro tipo copia el dato directamente.
+    </div>
+    <div id="providerRowsWrap"></div>
+    <div class="row">
+      <button class="btn-mini" onclick="addProviderRow()">+ Agregar proveedor</button>
+    </div>
+
+    <h2 style="margin-top:34px;"><span class="step-no">02b·</span> Alias de proveedores</h2>
+    <div class="hint" style="margin-top:0; margin-bottom:14px;">
+      Si en tu listado un proveedor aparece con otro nombre (por ejemplo <b>CHIGUISTORE</b>), vincúlalo aquí con el proveedor registrado (<b>CHIGUI</b>). Se guarda en <code>PROVIDER_ALIASES</code> y no distingue mayúsculas/minúsculas.
+    </div>
+    <div id="aliasRowsWrap"></div>
+    <div class="row">
+      <button class="btn-mini" onclick="addAliasRow()">+ Agregar alias</button>
+    </div>
+    <div class="row" style="margin-top:22px;">
+      <button class="btn-ghost" onclick="goStep(1)">← Volver</button>
+      <button class="btn-primary" onclick="goStep(3)">Continuar a reglas de precio →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="card" id="step3" style="display:none;">
+    <h2><span class="step-no">03·</span> Reglas de auto-precio</h2>
+    <div class="hint" style="margin-top:0; margin-bottom:14px;">
+      Define combinaciones <b>Plataforma + Proveedor → Precio</b>. Cuando el organizador detecte esa combinación en una cuenta, autorrellenará el precio en su Paso 3. (No aplica al bloque manual de YouTube ni a los lotes de stock nuevo — esos siguen siendo manuales, ya que no vienen de una cuenta detectada.)
+    </div>
+    <div id="rulesWrap"></div>
+    <div class="add-rule-form" style="margin-top:14px;">
+      <div class="rule-field">
+        <label>Plataforma</label>
+        <input type="text" id="newRulePlatform" list="platformNamesList" placeholder="Ej. Netflix">
+      </div>
+      <div class="rule-field">
+        <label>Proveedor</label>
+        <input type="text" id="newRuleProvider" list="ruleProviderNamesList" placeholder="Ej. Zona">
+      </div>
+      <div class="rule-field">
+        <label>Precio</label>
+        <input type="number" id="newRulePrice" min="0" step="0.01" placeholder="0.00">
+      </div>
+      <div class="rule-field">
+        <label>Moneda</label>
+        <select id="newRuleCurrency"><option value="USDT">USDT</option><option value="S/.">S/.</option></select>
+      </div>
+      <button class="btn-mini" onclick="addRule()">+ Agregar regla</button>
+    </div>
+    <datalist id="platformNamesList"></datalist>
+    <datalist id="ruleProviderNamesList"></datalist>
+    <div class="row" style="margin-top:22px;">
+      <button class="btn-ghost" onclick="goStep(2)">← Volver</button>
+      <button class="btn-primary" onclick="goStep(4)">Ir a compilar →</button>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="card" id="step4" style="display:none;">
+    <h2><span class="step-no">04·</span> Resumen y código actualizado</h2>
+    <div id="summaryWrap"></div>
+    <div id="patchWarning" class="hint warn" style="display:none;"></div>
+    <div class="row" style="margin-bottom:6px;">
+      <button class="btn-primary" onclick="generateCode()">Compilar código actualizado</button>
+    </div>
+    <div id="finalCodeWrap" style="display:none; margin-top:14px;">
+      <textarea id="finalCode" rows="18" spellcheck="false" readonly></textarea>
+      <div class="row">
+        <button class="btn-mini" onclick="copyFinalCode()">📋 Copiar código</button>
+        <button class="btn-mini" onclick="downloadFinalCode()">⬇ Descargar .html</button>
+        <button class="btn-ghost" onclick="goStep(2)">← Seguir editando</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const PAYMENT_TYPES = [
+  { id:'yape',    label:'Yape',           placeholder:'Número de celular Yape' },
+  { id:'plin',    label:'Plin',           placeholder:'Número de celular Plin' },
+  { id:'binance', label:'Binance ID',     placeholder:'ID de Binance' },
+  { id:'wallet',  label:'Billetera Cripto', placeholder:'Dirección de wallet (0x...)' },
+  { id:'web',     label:'Web',            placeholder:'https://...' },
+  { id:'otro',    label:'Otro',           placeholder:'Cuenta / correo / dato' },
+];
+function typeInfo(id){ return PAYMENT_TYPES.find(t=>t.id===id) || PAYMENT_TYPES[PAYMENT_TYPES.length-1]; }
+// Traduce entre el id interno de esta consola y la etiqueta EXACTA que tu código espera
+// dentro de PROVIDER_PAYMENT_TYPES ('YAPE' | 'PLIN' | 'BINANCE ID' | 'BILLETERA CRIPTO' | 'WEB' | 'OTRO').
+const TYPE_ID_TO_LABEL = { yape:'YAPE', plin:'PLIN', binance:'BINANCE ID', wallet:'BILLETERA CRIPTO', web:'WEB', otro:'OTRO' };
+const LABEL_TO_TYPE_ID = { 'YAPE':'yape', 'PLIN':'plin', 'BINANCE ID':'binance', 'BILLETERA CRIPTO':'wallet', 'WEB':'web', 'OTRO':'otro' };
+
+let workingCode = '';
+let providers = [];        // [{name, method, type, origName, origMethod, deleted, isNew}]
+let pricingRules = [];      // [{platform, provider, price, currency}]
+let aliases = [];           // [{alias, target}]
+let origAliases = new Map(); // alias → target, tal como venían en el código cargado
+let detectedPlatforms = [];
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1900);
+}
+function setPill(n){
+  for(let i=1;i<=4;i++){
+    const p = document.getElementById('pill-'+i);
+    p.classList.remove('active','done');
+    if(i<n) p.classList.add('done');
+    if(i===n) p.classList.add('active');
+  }
+}
+function goStep(n){
+  for(let i=1;i<=4;i++) document.getElementById('step'+i).style.display = (i===n)?'block':'none';
+  setPill(n);
+  if(n===2){ renderProviderRows(); renderAliasRows(); }
+  if(n===3) renderRules();
+  if(n===4) renderSummary();
+}
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(str){ return escapeHtml(str); }
+function isUrlLike(str){ return !!str && /^https?:\/\//i.test(str.trim()); }
+function unescapeJs(s){ return s.replace(/\\'/g, "'").replace(/\\\\/g, "\\"); }
+function escapeJsSingle(s){ return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+
+function inferType(method){
+  if(!method) return 'otro';
+  if(isUrlLike(method)) return 'web';
+  if(/^0x[a-f0-9]{6,}/i.test(method.trim())) return 'wallet';
+  return 'otro';
+}
+
+function parseStringPairs(blockContent){
+  const re = /'((?:\\.|[^'\\])*)'\s*:\s*'((?:\\.|[^'\\])*)'/g;
+  const out = [];
+  let m;
+  while((m = re.exec(blockContent)) !== null){
+    out.push({ key: unescapeJs(m[1]), value: unescapeJs(m[2]) });
+  }
+  return out;
+}
+function extractBlock(code, constName){
+  const re = new RegExp('const\\s+' + constName + '\\s*=\\s*\\{([\\s\\S]*?)\\n\\};');
+  const m = code.match(re);
+  return m ? { full: m[0], inner: m[1] } : null;
+}
+function extractArrayNames(code){
+  const re = /const\s+PLATFORM_PATTERNS\s*=\s*\[([\s\S]*?)\n\];/;
+  const m = code.match(re);
+  if(!m) return [];
+  const names = [];
+  const nameRe = /name\s*:\s*'([^']*)'/g;
+  let nm;
+  while((nm = nameRe.exec(m[1])) !== null) names.push(nm[1]);
+  return names;
+}
+// Lee PROVIDER_PAYMENT_TYPES (si existe) y devuelve un Map de nombre-de-proveedor (en
+// minúsculas) → etiqueta tal cual está en el código ('YAPE', 'WEB', etc).
+function extractProviderTypesMap(code){
+  const block = extractBlock(code, 'PROVIDER_PAYMENT_TYPES');
+  const map = new Map();
+  if(!block) return map;
+  parseStringPairs(block.inner).forEach(p => map.set(p.key.toLowerCase(), p.value.toUpperCase().trim()));
+  return map;
+}
+
+function loadCode(){
+  const raw = document.getElementById('codeInput').value;
+  const statusEl = document.getElementById('loadStatus');
+  if(!raw.trim()){ showToast('Pega el código primero'); return; }
+  workingCode = raw;
+
+  const providerBlock = extractBlock(workingCode, 'PROVIDER_PAYMENTS');
+  if(!providerBlock){
+    statusEl.textContent = 'No se encontró PROVIDER_PAYMENTS en este código — revisa que sea el archivo correcto.';
+    statusEl.classList.add('warn');
+    showToast('No se pudo leer la lista de proveedores');
+    return;
+  }
+  // Deduplicar como lo haría JS con un objeto literal: se conserva el orden de primera
+  // aparición, pero el valor final es el de la última ocurrencia de esa clave.
+  const pairs = parseStringPairs(providerBlock.inner);
+  const order = [];
+  const map = new Map();
+  pairs.forEach(p => {
+    if(!map.has(p.key)) order.push(p.key);
+    map.set(p.key, p.value);
+  });
+  // El tipo se toma primero de PROVIDER_PAYMENT_TYPES si el proveedor ya está clasificado
+  // ahí; si no aparece, se infiere del dato (URL → Web, 0x... → Billetera Cripto, si no Otro).
+  const typesMap = extractProviderTypesMap(workingCode);
+  providers = order.map(name => {
+    const method = map.get(name);
+    const labelFound = typesMap.get(name.toLowerCase());
+    const type = labelFound ? (LABEL_TO_TYPE_ID[labelFound] || 'otro') : inferType(method);
+    return { name, method, type, origName: name, origMethod: method, origType: type, deleted:false, isNew:false };
+  });
+
+  const rulesBlock = extractBlock(workingCode, 'PRICING_RULES');
+  pricingRules = [];
+  if(rulesBlock){
+    const ruleRe = /'((?:\\.|[^'\\])*)'\s*:\s*\{\s*price\s*:\s*([\d.]+)\s*,\s*currency\s*:\s*'([^']*)'\s*\}/g;
+    let m;
+    while((m = ruleRe.exec(rulesBlock.inner)) !== null){
+      const key = unescapeJs(m[1]);
+      const sep = key.indexOf('||');
+      if(sep === -1) continue;
+      pricingRules.push({ platform: key.slice(0,sep), provider: key.slice(sep+2), price: parseFloat(m[2]), currency: m[3] });
+    }
+  }
+
+  const aliasBlock = extractBlock(workingCode, 'PROVIDER_ALIASES');
+  aliases = [];
+  origAliases = new Map();
+  if(aliasBlock){
+    parseStringPairs(aliasBlock.inner).forEach(p => {
+      aliases.push({ alias: p.key, target: p.value });
+      origAliases.set(p.key, p.value);
+    });
+  }
+
+  detectedPlatforms = extractArrayNames(workingCode);
+  document.getElementById('platformNamesList').innerHTML = detectedPlatforms.map(p=>`<option value="${escapeAttr(p)}">`).join('');
+
+  statusEl.textContent = `Listo: ${providers.length} proveedores detectados${rulesBlock ? `, ${pricingRules.length} reglas de precio existentes` : ''}${aliasBlock ? `, ${aliases.length} alias` : ''}.`;
+  statusEl.classList.remove('warn');
+  showToast('Código leído correctamente');
+  goStep(2);
+}
+
+function renderProviderRows(){
+  refreshRuleProviderDatalist();
+  const wrap = document.getElementById('providerRowsWrap');
+  let html = '';
+  providers.forEach((p, i) => {
+    if(p.deleted) return;
+    const edited = !p.isNew && (p.name !== p.origName || p.method !== p.origMethod || p.type !== p.origType);
+    const cls = p.isNew ? 'row-new' : (edited ? 'row-edited' : '');
+    const info = typeInfo(p.type);
+    html += `<div class="provider-row ${cls}" data-idx="${i}">
+      <div class="provider-row-top">
+        <div class="field">
+          <label>Proveedor</label>
+          <input type="text" value="${escapeAttr(p.name)}" oninput="providers[${i}].name=this.value; markRow(${i})">
+        </div>
+        <div class="field">
+          <label>Dato de pago</label>
+          <input type="${p.type==='web'?'url':'text'}" value="${escapeAttr(p.method)}" placeholder="${escapeAttr(info.placeholder)}" oninput="providers[${i}].method=this.value; markRow(${i})">
+        </div>
+        <button class="row-x" title="Eliminar proveedor" onclick="deleteProvider(${i})">×</button>
+      </div>
+      <div class="type-pills">
+        ${PAYMENT_TYPES.map(t => `<button type="button" class="type-pill ${p.type===t.id?'active':''} ${t.id==='web'?'is-web':''}" onclick="setProviderType(${i},'${t.id}')">${escapeAttr(t.label)}</button>`).join('')}
+      </div>
+    </div>`;
+  });
+  wrap.innerHTML = html || '<div class="empty">No hay proveedores.</div>';
+}
+function setProviderType(i, typeId){
+  providers[i].type = typeId;
+  markRow(i);
+  renderProviderRows();
+}
+function markRow(i){
+  // Solo actualiza la clase visual de "editado" en esa fila puntual — nunca reconstruye
+  // el HTML aquí, porque eso le quitaría el foco al campo mientras se está escribiendo.
+  const rowEl = document.querySelector(`.provider-row[data-idx="${i}"]`);
+  if(!rowEl) return;
+  const p = providers[i];
+  if(p.isNew) return;
+  const edited = (p.name !== p.origName || p.method !== p.origMethod || p.type !== p.origType);
+  rowEl.classList.toggle('row-edited', edited);
+}
+function addProviderRow(){
+  providers.push({ name:'', method:'', type:'otro', origName:null, origMethod:null, origType:null, deleted:false, isNew:true });
+  renderProviderRows();
+}
+function deleteProvider(i){
+  if(providers[i].isNew){ providers.splice(i,1); } else { providers[i].deleted = true; }
+  renderProviderRows();
+}
+function renderAliasRows(){
+  refreshRuleProviderDatalist();
+  const wrap = document.getElementById('aliasRowsWrap');
+  if(aliases.length === 0){ wrap.innerHTML = '<div class="empty">No hay alias configurados.</div>'; return; }
+  wrap.innerHTML = aliases.map((a, i) => `<div class="rule-card">
+    <div class="rule-field"><label>Aparece en el listado como</label><input type="text" value="${escapeAttr(a.alias)}" oninput="aliases[${i}].alias=this.value"></div>
+    <div class="rule-field"><label>Proveedor registrado</label><input type="text" list="ruleProviderNamesList" value="${escapeAttr(a.target)}" oninput="aliases[${i}].target=this.value"></div>
+    <button class="row-x rule-remove" title="Eliminar alias" onclick="removeAlias(${i})">×</button>
+  </div>`).join('');
+}
+function addAliasRow(){ aliases.push({ alias:'', target:'' }); renderAliasRows(); }
+function removeAlias(i){ aliases.splice(i,1); renderAliasRows(); }
+function refreshRuleProviderDatalist(){
+  const list = providers.filter(p=>!p.deleted && p.name.trim());
+  document.getElementById('ruleProviderNamesList').innerHTML = list.map(p=>`<option value="${escapeAttr(p.name)}">`).join('');
+}
+
+function renderRules(){
+  refreshRuleProviderDatalist();
+  const wrap = document.getElementById('rulesWrap');
+  if(pricingRules.length === 0){ wrap.innerHTML = '<div class="empty">Aún no hay reglas de precio configuradas.</div>'; return; }
+  let html = '';
+  pricingRules.forEach((r, i) => {
+    html += `<div class="rule-card">
+      <div class="rule-field"><label>Plataforma</label><input type="text" list="platformNamesList" value="${escapeAttr(r.platform)}" oninput="pricingRules[${i}].platform=this.value"></div>
+      <div class="rule-field"><label>Proveedor</label><input type="text" list="ruleProviderNamesList" value="${escapeAttr(r.provider)}" oninput="pricingRules[${i}].provider=this.value"></div>
+      <div class="rule-field"><label>Precio</label>
+        <div class="rule-price-wrap">
+          <input type="number" min="0" step="0.01" value="${r.price}" oninput="pricingRules[${i}].price=parseFloat(this.value)||0">
+          <select oninput="pricingRules[${i}].currency=this.value">
+            <option value="USDT" ${r.currency==='USDT'?'selected':''}>USDT</option>
+            <option value="S/." ${r.currency==='S/.'?'selected':''}>S/.</option>
+          </select>
+        </div>
+      </div>
+      <button class="row-x rule-remove" title="Eliminar regla" onclick="removeRule(${i})">×</button>
+    </div>`;
+  });
+  wrap.innerHTML = html;
+}
+function addRule(){
+  const platform = document.getElementById('newRulePlatform').value.trim();
+  const provider = document.getElementById('newRuleProvider').value.trim();
+  const price = parseFloat(document.getElementById('newRulePrice').value) || 0;
+  const currency = document.getElementById('newRuleCurrency').value;
+  if(!platform || !provider){ showToast('Indica plataforma y proveedor'); return; }
+  const existingIdx = pricingRules.findIndex(r => r.platform.toLowerCase()===platform.toLowerCase() && r.provider.toLowerCase()===provider.toLowerCase());
+  if(existingIdx !== -1){ pricingRules[existingIdx] = {platform, provider, price, currency}; }
+  else { pricingRules.push({platform, provider, price, currency}); }
+  document.getElementById('newRulePlatform').value = '';
+  document.getElementById('newRuleProvider').value = '';
+  document.getElementById('newRulePrice').value = '';
+  renderRules();
+  showToast('Regla guardada');
+}
+function removeRule(i){ pricingRules.splice(i,1); renderRules(); }
+
+function renderSummary(){
+  const added = providers.filter(p=>p.isNew && !p.deleted && p.name.trim());
+  const removed = providers.filter(p=>p.deleted && !p.isNew);
+  const edited = providers.filter(p=>!p.isNew && !p.deleted && (p.name!==p.origName || p.method!==p.origMethod || p.type!==p.origType));
+  const wrap = document.getElementById('summaryWrap');
+  let items = '';
+  added.forEach(p => items += `<li><span class="tag tag-add">nuevo</span> ${escapeHtml(p.name)} — ${escapeHtml(p.method)||'(sin dato)'} <span class="badge">${escapeHtml(typeInfo(p.type).label)}</span></li>`);
+  edited.forEach(p => items += `<li><span class="tag tag-edit">editado</span> ${escapeHtml(p.origName)} → ${escapeHtml(p.name)}: ${escapeHtml(p.method)||'(sin dato)'} <span class="badge">${escapeHtml(typeInfo(p.type).label)}</span></li>`);
+  removed.forEach(p => items += `<li><span class="tag tag-del">eliminado</span> ${escapeHtml(p.origName)}</li>`);
+  // Alias: nuevos / editados / eliminados respecto al código cargado
+  const curAlias = new Map();
+  aliases.filter(a => a.alias.trim() && a.target.trim()).forEach(a => curAlias.set(a.alias, a.target));
+  curAlias.forEach((t, k) => {
+    if(!origAliases.has(k)) items += `<li><span class="tag tag-add">alias</span> ${escapeHtml(k)} → ${escapeHtml(t)}</li>`;
+    else if(origAliases.get(k) !== t) items += `<li><span class="tag tag-edit">alias</span> ${escapeHtml(k)} → ${escapeHtml(t)}</li>`;
+  });
+  origAliases.forEach((t, k) => {
+    if(!curAlias.has(k)) items += `<li><span class="tag tag-del">alias</span> ${escapeHtml(k)}</li>`;
+  });
+  pricingRules.forEach(r => items += `<li><span class="tag tag-rule">regla</span> ${escapeHtml(r.platform)} + ${escapeHtml(r.provider) || '(sin proveedor)'} → ${r.price.toFixed(2)} ${escapeHtml(r.currency)}</li>`);
+
+  // Avisos: reglas/alias que apuntan a un proveedor que ya no está en la lista (nunca se aplicarían)
+  const live = new Set(providers.filter(p => !p.deleted && p.name.trim()).map(p => p.name.trim().toLowerCase()));
+  const deadRules = pricingRules.filter(r => r.provider.trim() && !live.has(r.provider.trim().toLowerCase()));
+  const deadAliases = [...curAlias].filter(([k, t]) => !live.has(t.trim().toLowerCase()));
+  let warns = '';
+  if(deadRules.length) warns += `<div class="hint warn">⚠ ${deadRules.length} regla(s) de precio apuntan a un proveedor que no existe en la lista y no se aplicarán: ${deadRules.map(r => escapeHtml(r.platform + ' + ' + r.provider)).join(' · ')}</div>`;
+  if(deadAliases.length) warns += `<div class="hint warn">⚠ ${deadAliases.length} alias apuntan a un proveedor que no existe en la lista: ${deadAliases.map(([k, t]) => escapeHtml(k + ' → ' + t)).join(' · ')}</div>`;
+  wrap.innerHTML = (items ? `<ul class="summary-list">${items}</ul>` : '<div class="empty">No hay cambios todavía — vuelve a los pasos anteriores para editar proveedores o reglas.</div>') + warns;
+}
+
+function normalizeMethodForType(p){
+  let val = (p.method || '').trim();
+  if(p.type === 'web' && val && !isUrlLike(val)){
+    val = 'https://' + val;
+  }
+  return val;
+}
+
+function buildProviderBlockText(){
+  const lines = providers.filter(p=>!p.deleted && p.name.trim()).map(p =>
+    `  '${escapeJsSingle(p.name)}': '${escapeJsSingle(normalizeMethodForType(p))}'`
+  );
+  return `const PROVIDER_PAYMENTS = {\n${lines.join(',\n')}\n};`;
+}
+function buildRulesBlockText(){
+  if(pricingRules.length === 0) return `const PRICING_RULES = {\n};`;
+  const lines = pricingRules.map(r =>
+    `  '${escapeJsSingle(r.platform)}||${escapeJsSingle(r.provider)}': {price: ${r.price}, currency: '${escapeJsSingle(r.currency)}'}`
+  );
+  return `const PRICING_RULES = {\n${lines.join(',\n')}\n};`;
+}
+// Solo se listan los proveedores cuyo tipo NO es "Otro" — el propio código ya trata
+// cualquier proveedor ausente de esta lista como OTRO por defecto (getPaymentTypeForProvider).
+function buildAliasBlockText(){
+  const list = aliases.filter(a => a.alias.trim() && a.target.trim());
+  if(list.length === 0) return `const PROVIDER_ALIASES = {\n};`;
+  const lines = list.map(a => `  '${escapeJsSingle(a.alias)}': '${escapeJsSingle(a.target)}'`);
+  return `const PROVIDER_ALIASES = {\n${lines.join(',\n')}\n};`;
+}
+function buildProviderTypesBlockText(){
+  const lines = providers
+    .filter(p => !p.deleted && p.name.trim() && p.type && p.type !== 'otro')
+    .map(p => `  '${escapeJsSingle(p.name)}': '${escapeJsSingle(TYPE_ID_TO_LABEL[p.type] || 'OTRO')}'`);
+  return `const PROVIDER_PAYMENT_TYPES = {\n${lines.join(',\n')}\n};`;
+}
+
+const OLD_GROUP_INIT = `    if(!groups[k]) {
+      const matched = findProviderMatch(a.observation);
+      groups[k] = {platform:a.platform, observation:a.observation, count:0, price:0, priceSet:false, currency:'USDT', paid:false, accountIds:[],
+        providerName: matched, paymentMethod: matched ? PROVIDER_PAYMENTS[matched] : ''};
+    }`;
+const NEW_GROUP_INIT = `    if(!groups[k]) {
+      const matched = findProviderMatch(a.observation);
+      const rule = matched ? PRICING_RULES[a.platform + '||' + matched] : null;
+      groups[k] = {platform:a.platform, observation:a.observation, count:0, price: rule ? rule.price : 0, priceSet: !!rule, currency: rule ? rule.currency : 'USDT', paid:false, accountIds:[],
+        providerName: matched, paymentMethod: matched ? PROVIDER_PAYMENTS[matched] : ''};
+    }`;
+// El auto-relleno se considera activo si goPricing() consulta las reglas, ya sea con la
+// versión directa (PRICING_RULES[a.platform ...]) o con findPricingRule(a.platform, ...).
+const PATCH_REGEX = /PRICING_RULES\[\s*a\.platform|findPricingRule\(\s*a\.platform/;
+
+function generateCode(){
+  let code = workingCode;
+
+  const providerBlock = extractBlock(code, 'PROVIDER_PAYMENTS');
+  if(!providerBlock){ showToast('No se pudo ubicar PROVIDER_PAYMENTS en el código'); return; }
+
+  let rulesBlock = extractBlock(code, 'PRICING_RULES');
+  let typesBlock = extractBlock(code, 'PROVIDER_PAYMENT_TYPES');
+  let aliasBlock = extractBlock(code, 'PROVIDER_ALIASES');
+  const newAliasText = buildAliasBlockText();
+  const newProviderText = buildProviderBlockText();
+  const newRulesText = buildRulesBlockText();
+  const newTypesText = buildProviderTypesBlockText();
+
+  // PROVIDER_PAYMENT_TYPES y PRICING_RULES son bloques independientes de PROVIDER_PAYMENTS
+  // (no se superponen en el texto), así que se reemplazan primero si ya existían.
+  // Se usan funciones como reemplazo para que un "$" dentro de un dato nunca se interprete.
+  if(typesBlock){ code = code.replace(typesBlock.full, () => newTypesText); }
+  if(rulesBlock){ code = code.replace(rulesBlock.full, () => newRulesText); }
+  if(aliasBlock){ code = code.replace(aliasBlock.full, () => newAliasText); }
+
+  // El bloque de proveedores se reemplaza al final; si algún bloque no existía en el
+  // código original, se agrega justo después de PROVIDER_PAYMENTS.
+  let providerReplacement = newProviderText;
+  if(!rulesBlock) providerReplacement += '\n' + newRulesText;
+  if(!typesBlock) providerReplacement += '\n' + newTypesText;
+  if(!aliasBlock && aliases.some(a => a.alias.trim() && a.target.trim())) providerReplacement += '\n' + newAliasText;
+  code = code.replace(providerBlock.full, () => providerReplacement);
+
+  let patchApplied = false;
+  const warnEl = document.getElementById('patchWarning');
+  if(PATCH_REGEX.test(code)){
+    patchApplied = true;
+    warnEl.style.display = 'none';
+  } else if(code.includes(OLD_GROUP_INIT)){
+    code = code.replace(OLD_GROUP_INIT, () => NEW_GROUP_INIT);
+    patchApplied = true;
+    warnEl.style.display = 'none';
+  } else {
+    warnEl.textContent = 'No se pudo enganchar el auto-relleno de precios en el Paso 3 del organizador (esa parte del código parece modificada). Los proveedores y las reglas igual quedaron guardados; el auto-relleno tendrás que aplicarlo manualmente o pedírmelo de nuevo indicando qué cambiaste ahí.';
+    warnEl.style.display = 'block';
+  }
+
+  document.getElementById('finalCode').value = code;
+  document.getElementById('finalCodeWrap').style.display = 'block';
+  showToast(patchApplied ? '¡Código compilado! Auto-relleno de precios activo ✓' : 'Código compilado (revisa el aviso sobre el auto-relleno)');
+}
+
+function copyFinalCode(){
+  const text = document.getElementById('finalCode').value;
+  if(!text){ showToast('Compila el código primero'); return; }
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(text).then(()=>showToast('¡Código copiado! ✓')).catch(()=>fallbackCopy(text));
+  } else { fallbackCopy(text); }
+}
+function fallbackCopy(text){
+  const ta = document.createElement('textarea'); ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); showToast('¡Código copiado! ✓'); } catch(e){ showToast('Error al copiar'); }
+  document.body.removeChild(ta);
+}
+function downloadFinalCode(){
+  const text = document.getElementById('finalCode').value;
+  if(!text){ showToast('Compila el código primero'); return; }
+  const blob = new Blob([text], {type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'wave-play-organizador.html';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Descarga iniciada');
+}
+
+goStep(1);
+</script>
+</body>
+</html>
